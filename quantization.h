@@ -65,4 +65,35 @@ std::vector<std::vector<int>> backwardQuantization(const std::vector<std::vector
     return result;
 }
 
+std::vector<std::vector<int>> QuantizateImage(const std::vector<std::vector<int>>& Y, int blockSize, int R, bool forward){
+    int H = Y.size();
+    int W = Y[0].size();
+    std::vector<std::vector<int>> outputData(H, std::vector<int>(W, 0));
+    std::vector<std::vector<int>> block(blockSize, std::vector<int>(blockSize, 0));
+
+    // Tiling entire image
+    for (int i = 0; i < H; i += blockSize){
+        int errors = 0;
+        for (int j = 0; j < W; j += blockSize){
+            // Forming block
+            for (int k = 0; k < blockSize; k++){
+                for (int l = 0; l < blockSize; l++){
+                    block.at(k).at(l) = Y.at(i + k).at(j + l);
+                }
+            }
+
+            // Quantization
+            std::vector<std::vector<int>> quantization = forward? forwardQuantization(block, R, blockSize): backwardQuantization(block, R, blockSize);
+
+            // Forming outputData + calculate Errors
+            for (int k = 0; k < blockSize; k++){
+                for (int l = 0; l < blockSize; l++){
+                    outputData.at(i + k).at(j + l) = quantization.at(k).at(l);
+                }
+            }
+        }
+    }
+    return outputData;
+}
+
 #endif //JPEG_QUANTIZATION_H

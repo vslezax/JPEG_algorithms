@@ -68,19 +68,15 @@ std::vector<std::vector<int>> backwardDCT(const std::vector<std::vector<int>>& v
     return result;
 }
 
-std::vector<std::vector<unsigned char>> DCTimage(const std::vector<std::vector<unsigned char>>& Y, const std::string& inputPath, const std::string& outputPath, int blockSize){
+std::vector<std::vector<int>> DCTimage(const std::vector<std::vector<int>>& Y, int blockSize, bool forward, bool log){
     int H = Y.size();
     int W = Y[0].size();
-    std::vector<std::vector<unsigned char>> outputData(H, std::vector<unsigned char>(W, 0));
+    std::vector<std::vector<int>> outputData(H, std::vector<int>(W, 0));
     std::vector<std::vector<int>> block(blockSize, std::vector<int>(blockSize, 0));
-    std::vector<std::vector<int>> DCTblock(blockSize, std::vector<int>(blockSize, 0));
-    Image output(outputPath);
-    Image input(inputPath);
-    input.readData();
 
     // Tiling entire image
     for (int i = 0; i < H; i += blockSize){
-        std::cout << "Working on tile [" << i << ", " << 0 << "] x [" << i + blockSize << ", " << W << "]..." << std::endl;
+        if (log) std::cout << "Working on tile [" << i << ", " << 0 << "] x [" << i + blockSize << ", " << W << "]..." << std::endl;
         int errors = 0;
         for (int j = 0; j < W; j += blockSize){
             // Forming block
@@ -91,58 +87,18 @@ std::vector<std::vector<unsigned char>> DCTimage(const std::vector<std::vector<u
             }
 
             // DCT
-            std::vector<std::vector<int>> DCT = backwardDCT(forwardDCT(block));
+            std::vector<std::vector<int>> DCT = forward? forwardDCT(block): backwardDCT(block);
 
             // Forming outputData + calculate Errors
             for (int k = 0; k < blockSize; k++){
                 for (int l = 0; l < blockSize; l++){
-                    outputData.at(i + k).at(j + l) = clipping(DCT.at(k).at(l));
-                }
-            }
-        }
-    }
-
-    output.writeChannel(input.fileHeader, input.infoHeader, outputData);
-    return outputData;
-}
-
-std::vector<std::vector<unsigned char>> DCTQuantizationImage(const std::vector<std::vector<unsigned char>>& Y, const std::string& inputPath, const std::string& outputPath, int blockSize, int R){
-    int H = Y.size();
-    int W = Y[0].size();
-    std::vector<std::vector<unsigned char>> outputData(H, std::vector<unsigned char>(W, 0));
-    std::vector<std::vector<int>> block(blockSize, std::vector<int>(blockSize, 0));
-    std::vector<std::vector<int>> DCTblock(blockSize, std::vector<int>(blockSize, 0));
-    Image output(outputPath);
-    Image input(inputPath);
-    input.readData();
-
-    // Tiling entire image
-    for (int i = 0; i < H; i += blockSize){
-        std::cout << "Working on tile [" << i << ", " << 0 << "] x [" << i + blockSize << ", " << W << "]..." << std::endl;
-        int errors = 0;
-        for (int j = 0; j < W; j += blockSize){
-            // Forming block
-            for (int k = 0; k < blockSize; k++){
-                for (int l = 0; l < blockSize; l++){
-                    block.at(k).at(l) = Y.at(i + k).at(j + l);
-                }
-            }
-
-            // DCT + Quantization
-            std::vector<std::vector<int>> DCT = forwardDCT(block);
-            std::vector<std::vector<int>> DCT_quantization = forwardQuantization(DCT, R, blockSize);
-            std::vector<std::vector<int>> DCT_unquantization = backwardQuantization(DCT_quantization, R, blockSize);
-            std::vector<std::vector<int>> unDCT_unquantization = backwardDCT(DCT_unquantization);
-
-            // Forming outputData + calculate Errors
-            for (int k = 0; k < blockSize; k++){
-                for (int l = 0; l < blockSize; l++){
-                    outputData.at(i + k).at(j + l) = clipping(unDCT_unquantization.at(k).at(l));
+                    outputData.at(i + k).at(j + l) = DCT.at(k).at(l);
                 }
             }
         }
     }
     return outputData;
 }
+
 
 #endif //JPEG_DCT_H

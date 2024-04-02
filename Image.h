@@ -41,7 +41,6 @@ public:
         }
 
         file.close();
-        std::cout << path << " read." << std::endl << std::endl;
     }
     void writeImage(BITMAPFILEHEADER fileHeaderNew, BITMAPINFOHEADER infoHeaderNew, std::vector<std::vector<RGBPixel>>& dataNew){
         H = dataNew.size();
