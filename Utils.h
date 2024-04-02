@@ -34,6 +34,32 @@ std::string createPath(std::string path, const std::string& message){
     return path;
 }
 
+std::string createFreqFolder(std::string path){
+    while (path[path.length() - 1] != '\\') path.pop_back();
+    path.insert(path.length(), "Freq\\");
+    return path;
+}
+
+template<class T>
+double entropy(const std::vector<T>& a){
+    double result = 0;
+    std::vector<int> counts(256, 0);
+    int totalPixels = a.size();
+
+    for (T pixel : a) {
+        counts[pixel]++;
+    }
+
+    for (int i = 0; i < 256; i++) {
+        if (counts[i] > 0) {
+            double probability = static_cast<double>(counts[i]) / totalPixels;
+            result -= probability * log2(probability);
+        }
+    }
+
+    return result;
+}
+
 std::string intToString(int value) {
     std::string result;
     bool isNegative = value < 0;
