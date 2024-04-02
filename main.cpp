@@ -9,18 +9,6 @@
 #include "DCT.h"
 #include "quantization.h"
 
-std::ostream& operator<<(std::ostream& os, const std::vector<std::vector<int>>& v){
-    if (v.empty()) return os;
-
-    for (int i = 0; i < v.size(); i++){
-        for (int j = 0; j < v[0].size(); j++){
-            std::cout << v.at(i).at(j) << (j == v.size() - 1? "\n": " ");
-        }
-    }
-
-    return os;
-}
-
 void fillVecByRand(std::vector<std::vector<int>>& v){
     srand(time(nullptr));
 
@@ -95,14 +83,13 @@ int main(int argc, char* argv[]){
     std::vector<std::vector<unsigned char>> Y = returnY(inputPath, yPath);
 
     // 1.2.1 - 1.2.4
-    std::vector<std::vector<unsigned char>> DCT_Y = DCTimage(Y, inputPath, dctPath, blockSize);
+    std::vector<std::vector<unsigned char>> DCT_Y = DCTimage(Y, inputPath, dctPath, blockSize, false, 0);
     std::cout << "PSNR: " << PSNR(Y, DCT_Y) << std::endl;
     std::cout << std::endl;
 
     // 2.1 - 2.2
-    for (int R = 0; R <= 10; R++){
-        std::cout << "Working in R = " << R << "..." << std::endl;
-        std::vector<std::vector<unsigned char>> DCT_Y_quantization = makeQuantization(DCT_Y, R, blockSize);
+    for (int R = 1; R <= 10; R++){
+        std::vector<std::vector<unsigned char>> DCT_Y_quantization = DCTimage(Y, inputPath, dctPath, blockSize, true, R);;
         std::cout << "R = " << R << ", PSNR: " << PSNR(Y, DCT_Y_quantization) << std::endl;
         if (R == 1 || R == 5 || R == 10){
             std::string rPath = createPath(inputPath, "_R" + intToString(R));

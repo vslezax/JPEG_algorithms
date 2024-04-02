@@ -27,6 +27,18 @@ int Qchroma[8][8] = {
         {99, 99, 99, 99, 99, 99, 99, 99}
 };
 
+std::ostream& operator<<(std::ostream& os, const std::vector<std::vector<int>>& v){
+    if (v.empty()) return os;
+
+    for (int i = 0; i < v.size(); i++){
+        for (int j = 0; j < v[0].size(); j++){
+            std::cout << v.at(i).at(j) << (j == v.size() - 1? "\n": " ");
+        }
+    }
+
+    return os;
+}
+
 std::vector<std::vector<int>> Q(int R, int blockSize){
     std::vector<std::vector<int>> result(blockSize, std::vector<int>(blockSize));
 
@@ -39,8 +51,8 @@ std::vector<std::vector<int>> Q(int R, int blockSize){
     return result;
 }
 
-std::vector<std::vector<int>> forwardQuantization(const std::vector<std::vector<unsigned char>>& block, int R, int blockSize){
-    std::vector<std::vector<int>> result;
+std::vector<std::vector<int>> forwardQuantization(const std::vector<std::vector<int>>& block, int R, int blockSize){
+    std::vector<std::vector<int>> result(blockSize, std::vector<int>(blockSize));
     std::vector<std::vector<int>> q = Q(R, blockSize);
 
     for (int i = 0; i < blockSize; i++){
@@ -52,44 +64,13 @@ std::vector<std::vector<int>> forwardQuantization(const std::vector<std::vector<
     return result;
 }
 
-std::vector<std::vector<unsigned char>> backwardQuantization(const std::vector<std::vector<int>>& block, int R, int blockSize){
-    std::vector<std::vector<unsigned char>> result;
+std::vector<std::vector<int>> backwardQuantization(const std::vector<std::vector<int>>& block, int R, int blockSize){
+    std::vector<std::vector<int>> result(blockSize, std::vector<int>(blockSize));
     std::vector<std::vector<int>> q = Q(R, blockSize);
 
     for (int i = 0; i < blockSize; i++){
         for (int j = 0; j < blockSize; j++){
             result[j][j] = clipping(block[i][j] * q[i][j]);
-        }
-    }
-
-    return result;
-}
-
-std::vector<std::vector<unsigned char>> makeQuantization(const std::vector<std::vector<unsigned char>>& Y, int R, int blockSize){
-    int H = Y.size();
-    int W = Y[0].size();
-    std::vector<std::vector<unsigned char>> block(blockSize, std::vector<unsigned char>(blockSize, 0));
-    std::vector<std::vector<unsigned char>> result(H, std::vector<unsigned char>(W, 0));
-
-    for (int i = 0; i < H; i += blockSize){
-        //std::cout << "Working on tile [" << i << ", " << 0 << "] x [" << i + blockSize << ", " << W << "]..." << std::endl;
-        for (int j = 0; j < W; j += blockSize){
-            // Forming block
-            for (int k = 0; k < blockSize; k++){
-                for (int l = 0; l < blockSize; l++){
-                    block.at(k).at(l) = Y.at(i + k).at(j + l);
-                }
-            }
-
-            // Quantization
-            std::vector<std::vector<unsigned char>> quantizationBlock = backwardQuantization(forwardQuantization(block, R, blockSize), R, blockSize);
-
-            // Forming outputData + calculate Errors
-            for (int k = 0; k < blockSize; k++){
-                for (int l = 0; l < blockSize; l++){
-                    result.at(i + k).at(j + l) = clipping(quantizationBlock.at(k).at(l));
-                }
-            }
         }
     }
 

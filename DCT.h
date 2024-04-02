@@ -6,6 +6,7 @@
 #include <cmath>
 #include "Image.h"
 #include "PSNR.h"
+#include "quantization.h"
 
 #define pi M_PI
 
@@ -67,7 +68,7 @@ std::vector<std::vector<int>> backwardDCT(const std::vector<std::vector<int>>& v
     return result;
 }
 
-std::vector<std::vector<unsigned char>> DCTimage(const std::vector<std::vector<unsigned char>>& Y, const std::string& inputPath, const std::string& outputPath, int blockSize){
+std::vector<std::vector<unsigned char>> DCTimage(const std::vector<std::vector<unsigned char>>& Y, const std::string& inputPath, const std::string& outputPath, int blockSize, bool q, int R){
     int H = Y.size();
     int W = Y[0].size();
     std::vector<std::vector<unsigned char>> outputData(H, std::vector<unsigned char>(W, 0));
@@ -90,7 +91,8 @@ std::vector<std::vector<unsigned char>> DCTimage(const std::vector<std::vector<u
             }
 
             // DCT
-            std::vector<std::vector<int>> DCT = backwardDCT(forwardDCT(block));
+            std::vector<std::vector<int>> DCT = q? backwardDCT(backwardQuantization(forwardQuantization(forwardDCT(block), R, blockSize), R, blockSize)):
+                                                   backwardDCT(forwardDCT(block));
 
             // Forming outputData + calculate Errors
             for (int k = 0; k < blockSize; k++){
