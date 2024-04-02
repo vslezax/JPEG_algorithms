@@ -27,18 +27,6 @@ int Qchroma[8][8] = {
         {99, 99, 99, 99, 99, 99, 99, 99}
 };
 
-std::ostream& operator<<(std::ostream& os, const std::vector<std::vector<int>>& v){
-    if (v.empty()) return os;
-
-    for (int i = 0; i < v.size(); i++){
-        for (int j = 0; j < v[0].size(); j++){
-            std::cout << v.at(i).at(j) << (j == v.size() - 1? "\n": " ");
-        }
-    }
-
-    return os;
-}
-
 std::vector<std::vector<int>> Q(int R, int blockSize){
     std::vector<std::vector<int>> result(blockSize, std::vector<int>(blockSize));
 

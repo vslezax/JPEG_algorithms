@@ -10,4 +10,5 @@ add_executable(JPEG main.cpp
         Image.h
         PSNR.h
         quantization.h
+        Utils.h
 )

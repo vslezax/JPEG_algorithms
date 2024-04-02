@@ -5,6 +5,7 @@
 
 #include "Image.h"
 #include "pixels.h"
+#include "Utils.h"
 
 std::vector<YCbCrPixel> RGBtoYCbCr(const std::vector<RGBPixel>& pixels, int H, int W){
     std::vector<YCbCrPixel> result(H * W, YCbCrPixel());

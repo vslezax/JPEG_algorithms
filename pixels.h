@@ -7,12 +7,6 @@
 #include "Windows.h"
 #include "cmath"
 
-unsigned char clipping(double value){
-    if (value < 0) return 0;
-    if (value > UCHAR_MAX) return UCHAR_MAX;
-    return (char)value;
-}
-
 struct RGBPixel {
     unsigned char R;
     unsigned char G;

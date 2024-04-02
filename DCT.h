@@ -68,7 +68,7 @@ std::vector<std::vector<int>> backwardDCT(const std::vector<std::vector<int>>& v
     return result;
 }
 
-std::vector<std::vector<unsigned char>> DCTimage(const std::vector<std::vector<unsigned char>>& Y, const std::string& inputPath, const std::string& outputPath, int blockSize, bool q, int R){
+std::vector<std::vector<unsigned char>> DCTimage(const std::vector<std::vector<unsigned char>>& Y, const std::string& inputPath, const std::string& outputPath, int blockSize){
     int H = Y.size();
     int W = Y[0].size();
     std::vector<std::vector<unsigned char>> outputData(H, std::vector<unsigned char>(W, 0));
@@ -91,8 +91,7 @@ std::vector<std::vector<unsigned char>> DCTimage(const std::vector<std::vector<u
             }
 
             // DCT
-            std::vector<std::vector<int>> DCT = q? backwardDCT(backwardQuantization(forwardQuantization(forwardDCT(block), R, blockSize), R, blockSize)):
-                                                   backwardDCT(forwardDCT(block));
+            std::vector<std::vector<int>> DCT = backwardDCT(forwardDCT(block));
 
             // Forming outputData + calculate Errors
             for (int k = 0; k < blockSize; k++){
@@ -107,89 +106,43 @@ std::vector<std::vector<unsigned char>> DCTimage(const std::vector<std::vector<u
     return outputData;
 }
 
-///
-/// NOT WORKING (IDK WHY)
-///
-void DCTimageRGB(const std::string& inputPath, const std::string& outputPath, int blockSize){
-    if (blockSize <= 0) return;
-    Image src(inputPath);
-    src.readData();
-    std::vector<std::vector<RGBPixel>> srcData = src.data;
-    std::vector<std::vector<RGBPixel>> outputData = src.data;
-
+std::vector<std::vector<unsigned char>> DCTQuantizationImage(const std::vector<std::vector<unsigned char>>& Y, const std::string& inputPath, const std::string& outputPath, int blockSize, int R){
+    int H = Y.size();
+    int W = Y[0].size();
+    std::vector<std::vector<unsigned char>> outputData(H, std::vector<unsigned char>(W, 0));
+    std::vector<std::vector<int>> block(blockSize, std::vector<int>(blockSize, 0));
+    std::vector<std::vector<int>> DCTblock(blockSize, std::vector<int>(blockSize, 0));
     Image output(outputPath);
+    Image input(inputPath);
+    input.readData();
 
-    int errorsRfull = 0;
-    int errorsGfull = 0;
-    int errorsBfull = 0;
-    std::vector<std::vector<RGBPixel>> RGBblock(blockSize, std::vector<RGBPixel>(blockSize, {0, 0, 0}));
-    std::vector<std::vector<RGBPixel>> DCTRGBblock(blockSize, std::vector<RGBPixel>(blockSize, {0, 0, 0}));
-    for (int i = 0; i < src.H; i += blockSize){
-        std::cout << "Working on tile [" << i << ", " << 0 << "] x [" << i + blockSize << ", " << src.W << "]...";
-        int errorsR = 0;
-        int errorsG = 0;
-        int errorsB = 0;
-        for (int j = 0; j < src.W; j += blockSize){
-            // Forming PIXELS block
+    // Tiling entire image
+    for (int i = 0; i < H; i += blockSize){
+        std::cout << "Working on tile [" << i << ", " << 0 << "] x [" << i + blockSize << ", " << W << "]..." << std::endl;
+        int errors = 0;
+        for (int j = 0; j < W; j += blockSize){
+            // Forming block
             for (int k = 0; k < blockSize; k++){
                 for (int l = 0; l < blockSize; l++){
-                    RGBblock.at(k).at(l) = src.data.at(i + k).at(j + l);
+                    block.at(k).at(l) = Y.at(i + k).at(j + l);
                 }
             }
 
-            // R channel
-            std::vector<std::vector<int>> R(blockSize, std::vector<int>(blockSize, 0));
-            for (int k = 0; k < blockSize; k++) {
-                for (int l = 0; l < blockSize; l++) {
-                    R.at(k).at(l) = RGBblock.at(k).at(l).R;
-                }
-            }
-            std::vector<std::vector<int>> DCTR = backwardDCT(forwardDCT(R));
-
-            // G channel
-            std::vector<std::vector<int>> G(blockSize, std::vector<int>(blockSize, 0));
-            for (int k = 0; k < blockSize; k++) {
-                for (int l = 0; l < blockSize; l++) {
-                    G.at(k).at(l) = RGBblock.at(k).at(l).G;
-                }
-            }
-            std::vector<std::vector<int>> DCTG = backwardDCT(forwardDCT(G));
-
-            // B channel
-            std::vector<std::vector<int>> B(blockSize, std::vector<int>(blockSize, 0));
-            for (int k = 0; k < blockSize; k++) {
-                for (int l = 0; l < blockSize; l++) {
-                    B.at(k).at(l) = RGBblock.at(k).at(l).B;
-                }
-            }
-            std::vector<std::vector<int>> DCTB = backwardDCT(forwardDCT(B));
-
-            // Forming DCTRGBblock
-            for (int k = 0; k < blockSize; k++) {
-                for (int l = 0; l < blockSize; l++) {
-                    DCTRGBblock.at(k).at(l) = {R.at(k).at(l), B.at(k).at(l), G.at(k).at(l)};
-                }
-            }
+            // DCT + Quantization
+            std::vector<std::vector<int>> DCT = forwardDCT(block);
+            std::vector<std::vector<int>> DCT_quantization = forwardQuantization(DCT, R, blockSize);
+            std::vector<std::vector<int>> DCT_unquantization = backwardQuantization(DCT_quantization, R, blockSize);
+            std::vector<std::vector<int>> unDCT_unquantization = backwardDCT(DCT_unquantization);
 
             // Forming outputData + calculate Errors
             for (int k = 0; k < blockSize; k++){
                 for (int l = 0; l < blockSize; l++){
-                    outputData.at(i + k).at(j + l) = DCTRGBblock.at(k).at(l);
-
-                    if (DCTRGBblock.at(k).at(l).R != RGBblock.at(k).at(l).R) errorsR++;
-                    if (DCTRGBblock.at(k).at(l).G != RGBblock.at(k).at(l).G) errorsG++;
-                    if (DCTRGBblock.at(k).at(l).B != RGBblock.at(k).at(l).B) errorsB++;
+                    outputData.at(i + k).at(j + l) = clipping(unDCT_unquantization.at(k).at(l));
                 }
             }
-            errorsRfull += errorsR;
-            errorsGfull += errorsG;
-            errorsBfull += errorsB;
         }
-        std::cout << "    Done. Errors: (" << errorsR << ", " << errorsB << ", " << errorsB << ")" << std::endl;
     }
-    std::cout << "Sum Errors: (" << errorsRfull << ", " << errorsBfull << ", " << errorsBfull << ")" << std::endl;
-
-    output.writeImage(src.fileHeader, src.infoHeader, outputData);
+    return outputData;
 }
 
 #endif //JPEG_DCT_H
