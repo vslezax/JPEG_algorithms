@@ -2,6 +2,8 @@
 #define JPEG_YCBCR_H
 
 #include <vector>
+
+#include "Image.h"
 #include "pixels.h"
 
 std::vector<YCbCrPixel> RGBtoYCbCr(const std::vector<RGBPixel>& pixels, int H, int W){
@@ -42,6 +44,27 @@ std::vector<RGBPixel> YCbCrtoRGB(std::vector<YCbCrPixel>& Y, int H, int W){
     return newPixels;
 }
 
+std::vector<std::vector<unsigned char>> returnY(const std::string& inputPath, const std::string& yPath){
+    // Read data
+    Image src(inputPath);
+    Image yImage(yPath);
+    src.readData();
+    int H = src.H;
+    int W = src.W;
+    std::vector<std::vector<YCbCrPixel>> srcDataFull = RGBtoYCbCr(src.data, H, W);
+    std::vector<std::vector<unsigned char>> srcData(H, std::vector<unsigned char>(W, 0));
 
+    // Data -> Y
+    std::vector<std::vector<unsigned char>> Y(H, std::vector<unsigned char>(W, 0));
+    for (int i = 0; i < H; i++){
+        for (int j = 0; j < W; j++){
+            srcData.at(i).at(j) = srcDataFull.at(i).at(j).Y;
+            Y.at(i).at(j) = srcData.at(i).at(j);
+        }
+    }
+    yImage.writeChannel(src.fileHeader, src.infoHeader, Y);
+
+    return Y;
+}
 
 #endif //JPEG_YCBCR_H

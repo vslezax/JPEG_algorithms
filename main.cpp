@@ -2,10 +2,12 @@
 #include <fstream>
 #include "Windows.h"
 #include <vector>
+#include <algorithm>
 
 #include "pixels.h"
 #include "YCbCr.h"
 #include "DCT.h"
+#include "quantization.h"
 
 std::ostream& operator<<(std::ostream& os, const std::vector<std::vector<int>>& v){
     if (v.empty()) return os;
@@ -27,6 +29,26 @@ void fillVecByRand(std::vector<std::vector<int>>& v){
             v.at(i).at(j) = rand() % 256;
         }
     }
+}
+
+std::string createPath(std::string path, const std::string& message){
+    path.insert(path.length() - 4, message);
+    return path;
+}
+
+std::string intToString(int value) {
+    std::string result;
+    bool isNegative = value < 0;
+    if (isNegative) value = -value;
+
+    do {
+        result += char(value % 10 + '0');
+        value /= 10;
+    } while (value);
+
+    if (isNegative) result += '-';
+    std::reverse(result.begin(), result.end());
+    return result;
 }
 
 int main(int argc, char* argv[]){
@@ -56,29 +78,39 @@ int main(int argc, char* argv[]){
     }
     std::cout << errors << " errors in example (" <<  100.0 * errors / N / N << "%) with max amplitude " << maxError << std::endl;
 
+
+    ///
+    /// Start
+    ///
+    std::string inputPath;
+    int blockSize;
+
+    std::cout << "Input image path: ";
+    std::cin >> inputPath;
+    std::cout << "Block size: ";
+    std::cin >> blockSize;
+    std::string yPath = createPath(inputPath, "_Y");
+    std::string dctPath = createPath(inputPath, "_DCT");
+
+    std::vector<std::vector<unsigned char>> Y = returnY(inputPath, yPath);
+
     // 1.2.1 - 1.2.4
-    while (true){
-        std::cout << "Start DCT for image? 'n' = exit" << std::endl;
-        char ch;
-        std::cin >> ch;
-        if (ch == 'n') break;
+    std::vector<std::vector<unsigned char>> DCT_Y = DCTimage(Y, inputPath, dctPath, blockSize);
+    std::cout << "PSNR: " << PSNR(Y, DCT_Y) << std::endl;
+    std::cout << std::endl;
 
-        std::string inputPath;
-        std::string yPath;
-        std::string DCTPath;
-        std::string outputPath;
-        int blockSize;
+    // 2.1 - 2.2
+    for (int R = 0; R <= 10; R++){
+        std::cout << "Working in R = " << R << "..." << std::endl;
+        std::vector<std::vector<unsigned char>> DCT_Y_quantization = makeQuantization(DCT_Y, R, blockSize);
+        std::cout << "R = " << R << ", PSNR: " << PSNR(Y, DCT_Y_quantization) << std::endl;
+        if (R == 1 || R == 5 || R == 10){
+            std::string rPath = createPath(inputPath, "_R" + intToString(R));
+            Image input(inputPath);
+            input.readData();
 
-        std::cout << "Input image path: ";
-        std::cin >> inputPath;
-        std::cout << "Only Y image path: ";
-        std::cin >> yPath;
-        std::cout << "Output image path: ";
-        std::cin >> outputPath;
-        std::cout << "Block size: ";
-        std::cin >> blockSize;
-
-        DCTimage(inputPath, yPath, outputPath, blockSize);
-        //DCTimageRGB(inputPath, outputPath, blockSize);
+            Image r(rPath);
+            r.writeChannel(input.fileHeader, input.infoHeader, DCT_Y_quantization);
+        }
     }
 }

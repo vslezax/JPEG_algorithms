@@ -8,4 +8,6 @@ add_executable(JPEG main.cpp
         YCbCr.h
         DCT.h
         Image.h
+        PSNR.h
+        quantization.h
 )

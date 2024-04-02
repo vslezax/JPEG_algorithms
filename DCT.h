@@ -5,6 +5,7 @@
 #include <iostream>
 #include <cmath>
 #include "Image.h"
+#include "PSNR.h"
 
 #define pi M_PI
 
@@ -66,63 +67,42 @@ std::vector<std::vector<int>> backwardDCT(const std::vector<std::vector<int>>& v
     return result;
 }
 
-void DCTimage(const std::string& inputPath, const std::string& yPath, const std::string& outputPath, int blockSize){
-    if (blockSize <= 0) return;
-    Image src(inputPath);
-    Image yImage(yPath);
-    Image output(outputPath);
-    src.readData();
-    int H = src.H;
-    int W = src.W;
-
-    // Reading data
-    std::vector<std::vector<YCbCrPixel>> srcDataFull = RGBtoYCbCr(src.data, H, W);
-    std::vector<std::vector<int>> srcData(H, std::vector<int>(W, 0));
-    // Data -> Y
-    std::vector<std::vector<unsigned char>> Y(H, std::vector<unsigned char>(W, 0));
-    for (int i = 0; i < H; i++){
-        for (int j = 0; j < W; j++){
-            srcData.at(i).at(j) = srcDataFull.at(i).at(j).Y;
-            Y.at(i).at(j) = srcData.at(i).at(j);
-        }
-    }
-    // Creating Y image
-    yImage.writeChannel(src.fileHeader, src.infoHeader, Y);
+std::vector<std::vector<unsigned char>> DCTimage(const std::vector<std::vector<unsigned char>>& Y, const std::string& inputPath, const std::string& outputPath, int blockSize){
+    int H = Y.size();
+    int W = Y[0].size();
     std::vector<std::vector<unsigned char>> outputData(H, std::vector<unsigned char>(W, 0));
-
-
-    // Tiling entire image
-    int errorsFull = 0;
     std::vector<std::vector<int>> block(blockSize, std::vector<int>(blockSize, 0));
     std::vector<std::vector<int>> DCTblock(blockSize, std::vector<int>(blockSize, 0));
-    for (int i = 0; i < src.H; i += blockSize){
-        std::cout << "Working on tile [" << i << ", " << 0 << "] x [" << i + blockSize << ", " << src.W << "]...";
+    Image output(outputPath);
+    Image input(inputPath);
+    input.readData();
+
+    // Tiling entire image
+    for (int i = 0; i < H; i += blockSize){
+        std::cout << "Working on tile [" << i << ", " << 0 << "] x [" << i + blockSize << ", " << W << "]..." << std::endl;
         int errors = 0;
-        for (int j = 0; j < src.W; j += blockSize){
+        for (int j = 0; j < W; j += blockSize){
             // Forming block
             for (int k = 0; k < blockSize; k++){
                 for (int l = 0; l < blockSize; l++){
-                    block.at(k).at(l) = srcData.at(i + k).at(j + l);
+                    block.at(k).at(l) = Y.at(i + k).at(j + l);
                 }
             }
 
             // DCT
-            std::vector<std::vector<int>> DCTB = backwardDCT(forwardDCT(block));
+            std::vector<std::vector<int>> DCT = backwardDCT(forwardDCT(block));
 
             // Forming outputData + calculate Errors
             for (int k = 0; k < blockSize; k++){
                 for (int l = 0; l < blockSize; l++){
-                    outputData.at(i + k).at(j + l) = clipping(DCTB.at(k).at(l));
-                    if (Y.at(k).at(l) != outputData.at(k).at(l)) errors++;
+                    outputData.at(i + k).at(j + l) = clipping(DCT.at(k).at(l));
                 }
             }
-            errorsFull += errors;
         }
-        std::cout << "    Done. Errors: " << errors << std::endl;
     }
-    std::cout << "Sum Errors: " << errorsFull << std::endl;
 
-    output.writeChannel(src.fileHeader, src.infoHeader, outputData);
+    output.writeChannel(input.fileHeader, input.infoHeader, outputData);
+    return outputData;
 }
 
 ///
