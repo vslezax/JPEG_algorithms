@@ -1,16 +1,13 @@
 #include <iostream>
-#include <fstream>
-#include "Windows.h"
 #include <vector>
 #include <algorithm>
 
-#include "pixels.h"
 #include "YCbCr.h"
 #include "DCT.h"
 #include "quantization.h"
 #include "Utils.h"
 
-int main(int argc, char* argv[]){
+int main(){
     ///
     /// Discrete Cosine Transform, DCT:
     /// y = Tx
@@ -66,7 +63,7 @@ int main(int argc, char* argv[]){
     std::cout << std::endl;
 
 
-    // 2.1 - 2.2
+
     for (int R = 0; R <= 10; R++){
         std::vector<std::vector<int>> quantization_Y = QuantizateImage(DCT_Y, blockSize, R, true);
         std::vector<std::vector<int>> unQuantization_Y = QuantizateImage(quantization_Y, blockSize, R, false);

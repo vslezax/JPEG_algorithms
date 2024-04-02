@@ -39,26 +39,24 @@ std::vector<std::vector<int>> Q(int R, int blockSize){
     return result;
 }
 
-std::vector<std::vector<int>> forwardQuantization(const std::vector<std::vector<int>>& block, int R, int blockSize){
+std::vector<std::vector<int>> forwardQuantization(const std::vector<std::vector<int>>& block, int blockSize, std::vector<std::vector<int>> q){
     std::vector<std::vector<int>> result(blockSize, std::vector<int>(blockSize));
-    std::vector<std::vector<int>> q = Q(R, blockSize);
 
     for (int i = 0; i < blockSize; i++){
         for (int j = 0; j < blockSize; j++){
-            result[j][j] = (int)((int)(block[i][j]) / q[i][j]);
+            result[i][j] = (int)(block[i][j] / q[i][j]);
         }
     }
 
     return result;
 }
 
-std::vector<std::vector<int>> backwardQuantization(const std::vector<std::vector<int>>& block, int R, int blockSize){
+std::vector<std::vector<int>> backwardQuantization(const std::vector<std::vector<int>>& block, int blockSize, std::vector<std::vector<int>> q){
     std::vector<std::vector<int>> result(blockSize, std::vector<int>(blockSize));
-    std::vector<std::vector<int>> q = Q(R, blockSize);
 
     for (int i = 0; i < blockSize; i++){
         for (int j = 0; j < blockSize; j++){
-            result[j][j] = clipping(block[i][j] * q[i][j]);
+            result[i][j] = block[i][j] * q[i][j];
         }
     }
 
@@ -83,9 +81,10 @@ std::vector<std::vector<int>> QuantizateImage(const std::vector<std::vector<int>
             }
 
             // Quantization
-            std::vector<std::vector<int>> quantization = forward? forwardQuantization(block, R, blockSize): backwardQuantization(block, R, blockSize);
+            std::vector<std::vector<int>> quantization = forward? forwardQuantization(block, blockSize, Q(R, blockSize)):
+                                                        backwardQuantization(block, blockSize, Q(R, blockSize));
 
-            // Forming outputData + calculate Errors
+            // Forming outputData
             for (int k = 0; k < blockSize; k++){
                 for (int l = 0; l < blockSize; l++){
                     outputData.at(i + k).at(j + l) = quantization.at(k).at(l);

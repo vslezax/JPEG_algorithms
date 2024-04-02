@@ -89,7 +89,7 @@ std::vector<std::vector<int>> DCTimage(const std::vector<std::vector<int>>& Y, i
             // DCT
             std::vector<std::vector<int>> DCT = forward? forwardDCT(block): backwardDCT(block);
 
-            // Forming outputData + calculate Errors
+            // Forming outputData
             for (int k = 0; k < blockSize; k++){
                 for (int l = 0; l < blockSize; l++){
                     outputData.at(i + k).at(j + l) = DCT.at(k).at(l);
