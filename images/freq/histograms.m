@@ -2,8 +2,8 @@ clc;
 clear;
 close all;
 
-folder_path = 'C:\Users\user\CLionProjects\JPEG\images\freq';
-psnr = 'C:\Users\user\CLionProjects\JPEG\images\freq\PSNR_R.txt';
+folder_path = 'C:\Users\user\CLionProjects\JPEG\images\freq\y';
+psnr = 'C:\Users\user\CLionProjects\JPEG\images\freq\y\PSNR_R.txt';
 file_list = dir(fullfile(folder_path, 'DC_R*.txt'));
 
 for i = 1:numel(file_list)

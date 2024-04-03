@@ -46,26 +46,30 @@ int main(){
     std::cin >> inputPath;
     std::cout << "Block size (default = 8): ";
     std::cin >> blockSize;
-    std::string yPath = createPath(inputPath, "_Y");
     std::string dctPath = createPath(inputPath, "_DCT");
     Image input(inputPath);
     input.readData();
 
-    std::vector<std::vector<unsigned char>> Y = returnY(inputPath, yPath);
+    std::cout << "Choose channel: Y (=y), Cb (=b), Cr (=r)? " << std::endl;
+    char channel;
+    std::cin >> channel;
+    std::string channelPath(1, channel);
+    channelPath += "\\";
+
+    std::vector<std::vector<unsigned char>> channelData = returnChannel(inputPath, channel);
 
     // 1.2.1 - 1.2.43
-    std::vector<std::vector<int>> DCT_Y = DCTimage(unclippingVector(Y), forwardDCT, blockSize, true);
+    std::vector<std::vector<int>> DCT_Y = DCTimage(unclippingVector(channelData), forwardDCT, blockSize, true);
     std::vector<std::vector<int>> unDCT_Y = DCTimage(DCT_Y, backwardDCT, blockSize, true);
-    std::cout << "PSNR: " << PSNR(Y, clippingVector(unDCT_Y)) << std::endl;
+    std::cout << "PSNR: " << PSNR(channelData, clippingVector(unDCT_Y)) << std::endl;
 
     Image DCTImage(dctPath);
     std::vector<std::vector<unsigned char>> unDCT_Y_clipping = clippingVector(unDCT_Y);
     DCTImage.writeChannel(input.fileHeader, input.infoHeader, unDCT_Y_clipping);
     std::cout << std::endl;
 
-
     double originalSize = 8 * input.H * input.W;
-    std::string directory = createFreqFolder(inputPath);
+    std::string directory = createFreqFolder(inputPath) + channelPath;
     std::ofstream file(directory + "PSNR_R.txt");
     if (!file.is_open()){
         std::cerr << "main() -> file isn't open" << std::endl;
@@ -77,12 +81,12 @@ int main(){
         std::vector<std::vector<int>> unQuantization_Y = QuantizateImage(quantization_Y, backwardQuantization, blockSize, R);
         std::vector<std::vector<int>> unQuantization_unDCT_Y = DCTimage(unQuantization_Y, backwardDCT, blockSize, false);
         std::vector<std::vector<unsigned char>> unQuantization_unDCT_Y_clipping = clippingVector(unQuantization_unDCT_Y);
-        double psnr = PSNR(Y, unQuantization_unDCT_Y_clipping);
+        double psnr = PSNR(channelData, unQuantization_unDCT_Y_clipping);
         std::cout << "R = " << R << ", PSNR: " << psnr << std::endl;
         file << R << " " << psnr << std::endl;
-        std::string rPath = createPath(inputPath, "_R" + intToString(R));
+        std::string rPath = createPath(inputPath, "_R" + intToString(R) + "_" + std::string(1, channel));
         Image r(rPath);
-        r.writeChannel(input.fileHeader, input.infoHeader, unQuantization_unDCT_Y_clipping);
+        if (R == 1 || R == 5 || R == 10) r.writeChannel(input.fileHeader, input.infoHeader, unQuantization_unDCT_Y_clipping);
 
         // 3.1 + 3.2
         std::vector<int> DC = exportDC(unQuantization_unDCT_Y_clipping, blockSize);
