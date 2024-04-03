@@ -44,7 +44,7 @@ int main(){
 
     std::cout << "Input image path: ";
     std::cin >> inputPath;
-    std::cout << "Block size: ";
+    std::cout << "Block size (default = 8): ";
     std::cin >> blockSize;
     std::string yPath = createPath(inputPath, "_Y");
     std::string dctPath = createPath(inputPath, "_DCT");
@@ -65,19 +65,26 @@ int main(){
 
 
     double originalSize = 8 * input.H * input.W;
+    std::string directory = createFreqFolder(inputPath);
+    std::ofstream file(directory + "PSNR_R.txt");
+    if (!file.is_open()){
+        std::cerr << "main() -> file isn't open" << std::endl;
+        exit(-1);
+    }
     for (int R = 0; R <= 10; R++){
         // 2.1 - 2.2
         std::vector<std::vector<int>> quantization_Y = QuantizateImage(DCT_Y, forwardQuantization, blockSize, R);
         std::vector<std::vector<int>> unQuantization_Y = QuantizateImage(quantization_Y, backwardQuantization, blockSize, R);
         std::vector<std::vector<int>> unQuantization_unDCT_Y = DCTimage(unQuantization_Y, backwardDCT, blockSize, false);
         std::vector<std::vector<unsigned char>> unQuantization_unDCT_Y_clipping = clippingVector(unQuantization_unDCT_Y);
-        std::cout << "R = " << R << ", PSNR: " << PSNR(Y, unQuantization_unDCT_Y_clipping) << std::endl;
+        double psnr = PSNR(Y, unQuantization_unDCT_Y_clipping);
+        std::cout << "R = " << R << ", PSNR: " << psnr << std::endl;
+        file << R << " " << psnr << std::endl;
         std::string rPath = createPath(inputPath, "_R" + intToString(R));
         Image r(rPath);
         r.writeChannel(input.fileHeader, input.infoHeader, unQuantization_unDCT_Y_clipping);
 
         // 3.1 + 3.2
-        std::string directory = createFreqFolder(inputPath);
         std::vector<int> DC = exportDC(unQuantization_unDCT_Y_clipping, blockSize);
         std::vector<int> dDC = calculateDCdiff(DC);
         std::vector<int> BC_dDC = calculateBitCategory(dDC); // (BC_dDC, MG) = (BC_dDC, DC)
@@ -111,4 +118,5 @@ int main(){
         std::cout << "Percentage: " << compress / (originalSize / 100.0) << "%" << std::endl;
         std::cout << std::endl;
     }
+    file.close();
 }

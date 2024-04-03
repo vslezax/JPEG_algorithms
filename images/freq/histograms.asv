@@ -41,12 +41,6 @@ for i = 1:numel(file_list)
 end
 
 figure;
-data = dlmread(psnr);
-x = data(:, 1);
-y = data(:, 2);
-plot(x, y, 'blue-O');
-title('PSNR(R)');
-xlabel('R');
-ylabel('PSNR');
-set(gcf, 'Color', 'w');
-
+data = dlmread(file_path);
+    x = data(:, 1);
+    y = data(:, 2);
