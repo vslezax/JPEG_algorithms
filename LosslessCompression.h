@@ -22,7 +22,7 @@ void printHistogram(const std::vector<int>& data, const std::string& path){
     for (int i = 0; i < 256; i++){
         file << i << " " << (freq.find(i) == freq.end()? 0: freq.find(i)->second) << std::endl;
     }
-    std::cout << path << " created.";
+    std::cout << path << " created." << std::endl;
 }
 
 std::vector<int> calculateDCdiff(const std::vector<int>& DC){

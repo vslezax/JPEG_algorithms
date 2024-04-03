@@ -6,6 +6,7 @@
 #include <random>
 #include <ctime>
 #include <algorithm>
+#include <map>
 
 std::ostream& operator<<(std::ostream& os, const std::vector<std::vector<int>>& v){
     if (v.empty()) return os;
@@ -43,16 +44,18 @@ std::string createFreqFolder(std::string path){
 template<class T>
 double entropy(const std::vector<T>& a){
     double result = 0;
-    std::vector<int> counts(256, 0);
-    int totalPixels = a.size();
+    std::map<int, int> map;
 
-    for (T pixel : a) {
-        counts[pixel]++;
+    for (T value : a) {
+        if (map.find(value) != map.end()) map.find(value)->second++;
+        else map.emplace(value, 1);
     }
+    int max = map.rbegin()->first;
+    int min = map.begin()->first;
 
-    for (int i = 0; i < 256; i++) {
-        if (counts[i] > 0) {
-            double probability = static_cast<double>(counts[i]) / totalPixels;
+    for (int i = min; i <= max; i++) {
+        if (map.find(i) != map.end()) {
+            double probability = static_cast<double>(map.find(i)->second) / a.size();
             result -= probability * log2(probability);
         }
     }

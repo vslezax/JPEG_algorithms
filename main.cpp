@@ -53,7 +53,7 @@ int main(){
 
     std::vector<std::vector<unsigned char>> Y = returnY(inputPath, yPath);
 
-    // 1.2.1 - 1.2.4
+    // 1.2.1 - 1.2.43
     std::vector<std::vector<int>> DCT_Y = DCTimage(unclippingVector(Y), blockSize, true, true);
     std::vector<std::vector<int>> unDCT_Y = DCTimage(DCT_Y, blockSize, false, true);
     std::cout << "PSNR: " << PSNR(Y, clippingVector(unDCT_Y)) << std::endl;
@@ -62,7 +62,6 @@ int main(){
     std::vector<std::vector<unsigned char>> unDCT_Y_clipping = clippingVector(unDCT_Y);
     DCTImage.writeChannel(input.fileHeader, input.infoHeader, unDCT_Y_clipping);
     std::cout << std::endl;
-
 
 
     for (int R = 0; R <= 10; R++){
@@ -81,8 +80,8 @@ int main(){
         std::vector<int> DC = exportDC(unQuantization_unDCT_Y_clipping, blockSize);
         std::vector<int> DC_diff = calculateDCdiff(DC);
         std::vector<int> BC = calculateBitCategory(DC_diff); // (BC, MG) = (BC, DC)
-        printHistogram(DC, directory + "DC_" + intToString(R) + ".txt");
-        printHistogram(DC_diff, directory + "DC_diff_" + intToString(R) + ".txt");
+        printHistogram(DC, directory + "DC_R" + intToString(R) + ".txt");
+        printHistogram(DC_diff, directory + "DC_diff_R" + intToString(R) + ".txt");
         std::cout << "DC entropy: " << entropy(DC) << std::endl;
         std::cout << "DC_diff entropy: " << entropy(DC_diff) << std::endl;
 
@@ -98,6 +97,7 @@ int main(){
 
         int BCsum = 0;
         for (auto i : BC) BCsum += i;
-        double compressionEntropy = entropy(BC)*DC.size() + entropy(AC_array)*AC_array.size()
+        double compressionEntropy = entropy(BC)*DC.size() + entropy(AC_array)*AC_array.size();
+        std::cout << std::endl;
     }
 }
