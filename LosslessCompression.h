@@ -7,11 +7,8 @@
 
 void printHistogram(const std::vector<int>& data, const std::string& path){
     std::map<int, int> freq;
-    for (int i = 0; i < data.size(); i++){
-        if (freq.find(data[i]) != freq.end()){
-            freq.find(data[i])->second++;
-        }
-        else freq.insert(std::pair<int, int>(data[i], 1));
+    for (int value : data){
+        freq[value]++;
     }
 
     std::ofstream file(path);
@@ -19,18 +16,22 @@ void printHistogram(const std::vector<int>& data, const std::string& path){
         std::cout << "printHistogram() -> file not opened!" << std::endl;
         exit(-1);
     }
-    for (int i = 0; i < 256; i++){
-        file << i << " " << (freq.find(i) == freq.end()? 0: freq.find(i)->second) << std::endl;
+
+    for (const auto& pair : freq){
+        file << pair.first << " " << pair.second << std::endl;
     }
+
     std::cout << path << " created." << std::endl;
 }
 
 std::vector<int> calculateDCdiff(const std::vector<int>& DC){
     std::vector<int> result;
 
-    // Tiling entire image
     for (int i = 0; i < DC.size(); i++){
-        result.push_back(i != 0? DC[i] - DC[i - 1]: DC[i]);
+        int diff;
+        if (i != 0) diff = DC[i] - DC[i - 1];
+        else diff = DC[i];
+        result.push_back(diff);
     }
     return result;
 }
@@ -40,7 +41,6 @@ std::vector<int> exportDC(const std::vector<std::vector<unsigned char>>& Y, int 
     int W = Y[0].size();
     std::vector<int> result;
 
-    // Tiling entire image
     for (int i = 0; i < H; i += blockSize){
         for (int j = 0; j < W; j += blockSize){
             result.push_back(Y[i][j]);
@@ -114,23 +114,22 @@ std::vector<std::pair<int, int>> compressAC(const std::vector<std::vector<unsign
     return result;
 }
 
+bool operator==(const std::pair<int, int>& a, const std::pair<int, int>& b){
+    return a.first == b.first && a.second == b.second;
+}
+
 double entropy(const std::vector<std::pair<int, int>>& a){
     double result = 0;
-    std::vector<int> counts(256 * 256, 0); // Assuming pairs are in the range [0, 255]
-    int totalPairs = a.size();
+    std::map<std::pair<int, int>, int> map;
 
-    for (const auto& pair : a) {
-        int first_value = pair.first;
-        int second_value = pair.second;
-        int index = first_value * 256 + second_value; // Assuming pairs are in the range [0, 255]
-        counts[index]++;
+    for (auto value : a) {
+        if (map.find(value) != map.end()) map.find(value)->second++;
+        else map.emplace(value, 1);
     }
 
-    for (int i = 0; i < 256 * 256; i++) { // Assuming pairs are in the range [0, 255]
-        if (counts[i] > 0) {
-            double probability = static_cast<double>(counts[i]) / totalPairs;
-            result -= probability * log2(probability);
-        }
+    for (auto i: map) {
+        double probability = (double)(map.find(i.first)->second) / a.size();
+        result -= probability * log2(probability);
     }
 
     return result;

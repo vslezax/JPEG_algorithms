@@ -10,17 +10,19 @@
 
 #define pi M_PI
 
+using data = std::vector<std::vector<int>>;
+
 double C(int f, int N){
     return (f == 0? 1.0/N: 2.0/N);
 }
 
-std::vector<std::vector<int>> forwardDCT(const std::vector<std::vector<int>>& vector){
+data forwardDCT(const data& vector){
     int N = vector.size();
     if (N == 0){
         std::cerr << "forwardDCT() -> N == 0!" << std::endl;
         exit(-1);
     }
-    std::vector<std::vector<int>> result(N, std::vector<int>(N, 0));
+    data result(N, std::vector<int>(N, 0));
 
     for (int k = 0; k < N; k++){
         for (int l = 0; l < N; l++){
@@ -40,13 +42,13 @@ std::vector<std::vector<int>> forwardDCT(const std::vector<std::vector<int>>& ve
     return result;
 }
 
-std::vector<std::vector<int>> backwardDCT(const std::vector<std::vector<int>>& vector){
+data backwardDCT(const data& vector){
     int N = vector.size();
     if (N == 0){
         std::cerr << "backwardDCT() -> N == 0!" << std::endl;
         exit(-1);
     }
-    std::vector<std::vector<int>> result(N, std::vector<int>(N, 0));
+    data result(N, std::vector<int>(N, 0));
 
     for (int k = 0; k < N; k++){
         for (int l = 0; l < N; l++){
@@ -68,11 +70,11 @@ std::vector<std::vector<int>> backwardDCT(const std::vector<std::vector<int>>& v
     return result;
 }
 
-std::vector<std::vector<int>> DCTimage(const std::vector<std::vector<int>>& Y, int blockSize, bool forward, bool log){
+data DCTimage(const data& Y, data(*func)(const data&), int blockSize, bool log){
     int H = Y.size();
     int W = Y[0].size();
-    std::vector<std::vector<int>> outputData(H, std::vector<int>(W, 0));
-    std::vector<std::vector<int>> block(blockSize, std::vector<int>(blockSize, 0));
+    data outputData(H, std::vector<int>(W, 0));
+    data block(blockSize, std::vector<int>(blockSize, 0));
 
     // Tiling entire image
     for (int i = 0; i < H; i += blockSize){
@@ -87,7 +89,7 @@ std::vector<std::vector<int>> DCTimage(const std::vector<std::vector<int>>& Y, i
             }
 
             // DCT
-            std::vector<std::vector<int>> DCT = forward? forwardDCT(block): backwardDCT(block);
+            data DCT = func(block);
 
             // Forming outputData
             for (int k = 0; k < blockSize; k++){

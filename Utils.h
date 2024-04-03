@@ -53,11 +53,9 @@ double entropy(const std::vector<T>& a){
     int max = map.rbegin()->first;
     int min = map.begin()->first;
 
-    for (int i = min; i <= max; i++) {
-        if (map.find(i) != map.end()) {
-            double probability = static_cast<double>(map.find(i)->second) / a.size();
-            result -= probability * log2(probability);
-        }
+    for (auto i: map) {
+        double probability = (double)(map.find(i.first)->second) / a.size();
+        result -= probability * log2(probability);
     }
 
     return result;
